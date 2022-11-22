@@ -190,7 +190,10 @@ fn main() {
                     }
 
                     let rt = Runtime::new().unwrap();
-                    rt.block_on(daemon::start(cfg, opts.detach));
+                    rt.block_on(async {
+                        console_subscriber::init();
+                        daemon::start(cfg, opts.detach).await
+                    });
                 }
             }
         }
