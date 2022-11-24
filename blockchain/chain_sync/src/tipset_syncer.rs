@@ -1163,16 +1163,16 @@ async fn validate_tipset<DB: Blockstore + Store + Clone + Send + Sync + 'static,
     debug!("Tipset keys: {:?}", full_tipset_key.cids);
 
     for b in blocks {
-        let validation_fn = tokio::task::spawn(validate_block::<_, C>(
-            consensus.clone(),
-            state_manager.clone(),
-            Arc::new(b),
-        ));
+        let consensus = consensus.clone();
+        let state_manager = state_manager.clone();
+        let validation_fn = tokio::task::spawn_blocking(|| {
+            validate_block::<_, C>(consensus, state_manager, Arc::new(b))
+        });
         validations.push(validation_fn);
     }
 
     while let Some(result) = validations.next().await {
-        match result? {
+        match result?.await {
             Ok(block) => {
                 chainstore.add_to_tipset_tracker(block.header()).await;
             }
